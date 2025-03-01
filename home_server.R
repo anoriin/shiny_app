@@ -1,7 +1,3 @@
-# Load required packages
-library(shiny)
-library(gdown)
-
 # Image rendering
 output$map_img1 <- renderImage({ list(src = "www/mimic.png", width = "100%", height = "200px") }, deleteFile = FALSE)
 output$map_img2 <- renderImage({ list(src = "www/pittsburgh.png", width = "100%", height = "200px") }, deleteFile = FALSE)
@@ -28,8 +24,7 @@ get_existing_file_path <- function(file_name) {
   
   if (!file.exists(file_path)) {
     message(paste("Downloading:", file_name))
-    gdown::gdown(url = paste0("https://drive.google.com/uc?id=", file_links[[file_name]]),
-                 output = file_path, overwrite = TRUE)
+    drive_download(as_id(file_links[[file_name]]), path = file_path, overwrite = TRUE)
   }
   
   if (file.exists(file_path)) {
