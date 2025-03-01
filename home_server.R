@@ -1,28 +1,47 @@
 # Image rendering
-output$map_img1 <- renderImage({ list(src = "docs/www/mimic.png", width = "100%", height = "200px") }, deleteFile = FALSE)
-output$map_img2 <- renderImage({ list(src = "docs/www/pittsburgh.png", width = "100%", height = "200px") }, deleteFile = FALSE)
-output$map_img3 <- renderImage({ list(src = "docs/www/baruch.png", width = "100%", height = "200px") }, deleteFile = FALSE)
+output$map_img1 <- renderImage({ list(src = "www/mimic.png", width = "100%", height = "200px") }, deleteFile = FALSE)
+output$map_img2 <- renderImage({ list(src = "www/pittsburgh.png", width = "100%", height = "200px") }, deleteFile = FALSE)
+output$map_img3 <- renderImage({ list(src = "www/baruch.png", width = "100%", height = "200px") }, deleteFile = FALSE)
 
-# Available dataset files
-available_files <- c(
-  "processed_baruch_database.RData",
-  "processed_baruch_davar_database.RData",
-  "processed_davar_database.RData",
-  "processed_baruch_routy_database.RData",
-  "processed_baruch_davar_routy_database.RData",
-  "processed_routy_database.RData",
-  "processed_davar_routy_database.RData"
+# Define the local dataset directory
+data_dir <- file.path(getwd(), "data")
+dir.create(data_dir, showWarnings = FALSE)  # Ensure the directory exists
+
+# Mapping of dataset filenames to Google Drive IDs
+file_links <- list(
+  "processed_baruch_database.RData"         = "1-7AEh855SrgBoBY-AmOLybrF1cDRkk3G", 
+  "processed_baruch_davar_database.RData"   = "1nZ7IgNEdl1rP-cQ7kgsAZZ5iqj9VrPYL",
+  "processed_davar_database.RData"          = "1XJDrsUfjxdjT7HX-f1uWw6fLDAQlSVxE",
+  "processed_baruch_routy_database.RData"   = "18CjQJ_1F4VOY4MEPHIETxPcpi9HMYh8P",
+  "processed_baruch_davar_routy_database.RData" = "1uDAeRuhH8mslBpMUQaDPqUmJPdg82Ee3",
+  "processed_routy_database.RData"          = "1UKApBMD1WsENx2KjgmID0PNGYx_58TYB",
+  "processed_davar_routy_database.RData"    = "1cAiDeokBuJIPFHpb1C8Rr8ycx4uBcVbu"
 )
 
+# Function to check if dataset file exists, otherwise download it
+get_existing_file_path <- function(file_name) {
+  file_path <- file.path(data_dir, file_name)
+  
+  if (!file.exists(file_path)) {
+    message(paste("Downloading:", file_name))
+    drive_download(as_id(file_links[[file_name]]), path = file_path, overwrite = TRUE)
+  }
+  
+  if (file.exists(file_path)) {
+    return(file_path)
+  } else {
+    return(NULL)
+  }
+}
+
 # Reactive value to store selected datasets
-selected_cards <- reactiveVal(NULL)  # Start as an empty vector
+selected_cards <- reactiveVal(NULL)
 
 observe({
   runjs('
     $(document).on("click", ".clickable-card", function() {
       var card_id = $(this).attr("id");  
       $(this).toggleClass("selected");
-      // Ensure current_selection is always an array
       var current_selection = Shiny.shinyapp.$inputValues["clicked_cards"];
       if (!Array.isArray(current_selection)) {
         current_selection = [];
@@ -32,7 +51,6 @@ observe({
       } else {
         current_selection.push(card_id);
       }
-      // Explicitly send "none" when all cards are deselected
       Shiny.setInputValue("clicked_cards", current_selection.length > 0 ? current_selection : "none", {priority: "event"});
     });
   ')
@@ -44,36 +62,37 @@ observeEvent(input$clicked_cards, {
   if (identical(new_selection, "none")) { 
     selected_cards(NULL)
   } else {
-    selected_cards(new_selection)  # Update with selected items
+    selected_cards(new_selection)
   }
 })
 
-# Determine the best matching file based on selected cards
+# Function to determine the best matching file
 get_best_matching_file <- function(selected) {
-  selected <- sort(tolower(selected))  # Sort to ensure alphabetical order
+  selected <- sort(tolower(selected))
   pattern <- paste0("processed_", paste(selected, collapse = "_"), "_database.RData")
-  # Find the most specific available file
-  best_match <- available_files[grepl(pattern, available_files)]
+  best_match <- names(file_links)[grepl(pattern, names(file_links))]
+  
   if (length(best_match) > 0) {
-    return(paste0("data/", best_match))  # Return full path to matching file
+    file_path <- get_existing_file_path(best_match)
+    return(file_path)
   } else {
-    return(NULL)  # No matching file found
+    return(NULL)
   }
 }
 
 # Load the best matching dataset
 selected_data <- reactive({
   if (length(selected_cards()) == 0) {
-    return(NULL)  # No selection, return NULL
+    return(NULL)
   }
   file_path <- get_best_matching_file(selected_cards())
-  validate(need(!is.null(file_path) && file.exists(file_path), "No matching dataset found."))  # Validate that the dataset exists
-  # Load the dataset from the file
+  validate(need(!is.null(file_path) && file.exists(file_path), "No matching dataset found."))
+  
   loaded_env <- new.env()
   load(file_path, envir = loaded_env)
-  dataset_name <- ls(loaded_env)[1]  # Get the name of the dataset
-  dataset <- get(dataset_name, envir = loaded_env)  # Extract the dataset
-  return(dataset)  # Return the loaded dataset
+  dataset_name <- ls(loaded_env)[1]
+  dataset <- get(dataset_name, envir = loaded_env)
+  return(dataset)
 })
 
 # Dataset selection message

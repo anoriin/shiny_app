@@ -9,6 +9,7 @@ library(vegan)
 library(SummarizedExperiment)
 library(lefser)
 library(plotly)
+library(googledrive)
 
 # Define UI
 ui <- navbarPage(
