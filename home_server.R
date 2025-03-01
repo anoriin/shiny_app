@@ -1,7 +1,7 @@
 # Image rendering
-output$map_img1 <- renderImage({ list(src = "docs/www/mimic.png", width = "100%", height = "200px") }, deleteFile = FALSE)
-output$map_img2 <- renderImage({ list(src = "docs/www/pittsburgh.png", width = "100%", height = "200px") }, deleteFile = FALSE)
-output$map_img3 <- renderImage({ list(src = "docs/www/baruch.png", width = "100%", height = "200px") }, deleteFile = FALSE)
+output$map_img1 <- renderImage({ list(src = "www/mimic.png", width = "100%", height = "200px") }, deleteFile = FALSE)
+output$map_img2 <- renderImage({ list(src = "www/pittsburgh.png", width = "100%", height = "200px") }, deleteFile = FALSE)
+output$map_img3 <- renderImage({ list(src = "www/baruch.png", width = "100%", height = "200px") }, deleteFile = FALSE)
 
 # Set your Google Drive folder ID
 folder_id <- "11t-wgGpliwkwEDB79QaTHGiJYokrcwPJ"
