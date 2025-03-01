@@ -3,6 +3,35 @@ output$map_img1 <- renderImage({ list(src = "docs/www/mimic.png", width = "100%"
 output$map_img2 <- renderImage({ list(src = "docs/www/pittsburgh.png", width = "100%", height = "200px") }, deleteFile = FALSE)
 output$map_img3 <- renderImage({ list(src = "docs/www/baruch.png", width = "100%", height = "200px") }, deleteFile = FALSE)
 
+# Set your Google Drive folder ID
+folder_id <- "11t-wgGpliwkwEDB79QaTHGiJYokrcwPJ"
+
+# Function to get file ID from Google Drive
+get_drive_file_id <- function(file_name) {
+  files <- drive_ls(as_id(folder_id))  # List files in the folder
+  match <- files[files$name == file_name, ]  # Find matching file
+  if (nrow(match) == 1) {
+    return(match$id)  # Return file ID
+  } else {
+    return(NULL)  # File not found
+  }
+}
+
+# Function to download dataset if missing
+download_if_needed <- function(file_name) {
+  file_path <- paste0("data/", file_name)  # Local storage path
+  if (!file.exists(file_path)) {
+    file_id <- get_drive_file_id(file_name)
+    if (!is.null(file_id)) {
+      drive_download(as_id(file_id), path = file_path, overwrite = TRUE)
+      message(paste("Downloaded", file_name, "from Google Drive"))
+    } else {
+      message(paste("Error: File", file_name, "not found in Google Drive"))
+    }
+  }
+  return(file_path)
+}
+
 # Available dataset files
 available_files <- c(
   "processed_baruch_database.RData",
@@ -48,16 +77,16 @@ observeEvent(input$clicked_cards, {
   }
 })
 
-# Determine the best matching file based on selected cards
+# Function to determine the best matching file
 get_best_matching_file <- function(selected) {
-  selected <- sort(tolower(selected))  # Sort to ensure alphabetical order
+  selected <- sort(tolower(selected))
   pattern <- paste0("processed_", paste(selected, collapse = "_"), "_database.RData")
-  # Find the most specific available file
   best_match <- available_files[grepl(pattern, available_files)]
   if (length(best_match) > 0) {
-    return(paste0("data/", best_match))  # Return full path to matching file
+    file_path <- download_if_needed(best_match)  # Download if missing
+    return(file_path)
   } else {
-    return(NULL)  # No matching file found
+    return(NULL)
   }
 }
 
