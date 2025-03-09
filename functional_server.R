@@ -78,34 +78,14 @@ update_metadata_selection2 <- function(input_subset, input_split_by2) {
   })
 }
 
-# Function to filter data based on subset selection
-filter_data <- function(input_subset) {
-  reactive({
-    req(selected_data())  # Ensure the data is loaded
-    if (input_subset() == "Donors") {
-      return(remove_samples(selected_data(), "Recipient"))
-    } else if (input_subset() == "Recipients") {
-      return(remove_samples(selected_data(), "Donor"))
-    } else {
-      return(selected_data())  # No filtering
-    }
-  })
-}
-
 # Function to generate and render abundance plots
 generate_abundance_plot <- function(input_trigger, input_subset, data_key, input_selected, input_split_by, input_split_by2, output_plot) {
   observeEvent(input_trigger(), {
-    if (output_plot == "genesabu_plot") {
-      plot_requested8(TRUE)
-    }
-    if (output_plot == "pathwaysabu_plot") {
-      plot_requested10(TRUE)
-    }
-    if (output_plot == "enzymesabu_plot") {
-      plot_requested13(TRUE)
-    }
+    if (output_plot == "genesabu_plot") { plot_requested8(TRUE) }
+    if (output_plot == "pathwaysabu_plot") { plot_requested10(TRUE) }
+    if (output_plot == "enzymesabu_plot") { plot_requested13(TRUE) }
     req(selected_data(), input_selected(), input_split_by(), input_split_by2())  # Ensure necessary inputs are available
-    selected_data <- filter_data(input_subset)()  # Get filtered data
+    selected_data <- filter_data(input_subset)()  # Get subsetted data
     split_by <- input_split_by()
     split_by2 <- input_split_by2()
     selected_items <- input_selected()
@@ -121,15 +101,9 @@ generate_abundance_plot <- function(input_trigger, input_subset, data_key, input
 # Function to generate and render fold change plots and tables
 generate_fc_plot <- function(input_trigger, data_key, input_selected, input_filter, output_plot, output_table) {
   observeEvent(input_trigger(), {
-    if (output_plot == "genesfc_plot") {
-      plot_requested9(TRUE)
-    }
-    if (output_plot == "pathwaysfc_plot") {
-      plot_requested11(TRUE)
-    }
-    if (output_plot == "enzymesfc_plot") {
-      plot_requested14(TRUE)
-    }
+    if (output_plot == "genesfc_plot") { plot_requested9(TRUE) }
+    if (output_plot == "pathwaysfc_plot") { plot_requested11(TRUE) }
+    if (output_plot == "enzymesfc_plot") { plot_requested14(TRUE) }
     req(selected_data(), input_selected(), input_filter())  # Ensure necessary inputs are available
     selected_data <- selected_data()
     selected_fc <- input_selected() 
