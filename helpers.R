@@ -165,3 +165,17 @@ generate_fcplot <- function(selected_data, feature, selected_features, responder
     arrange(PValue) 
   return(list(fc_plot, fc_table))
 }
+
+# Function to filter data based on subset selection
+filter_data <- function(input_subset) {
+  reactive({
+    req(selected_data())  # Ensure the data is loaded
+    if (input_subset() == "Donors") {
+      return(remove_samples(selected_data(), "Recipient"))
+    } else if (input_subset() == "Recipients") {
+      return(remove_samples(selected_data(), "Donor"))
+    } else {
+      return(selected_data())  # No filtering
+    }
+  })
+}

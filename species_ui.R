@@ -88,6 +88,11 @@ tabPanel("Abundance",
                               options = list(placeholder = "Select one or more taxa")
                             ),
                             selectInput(
+                              "species2_subset_data",
+                              "Subset data:",
+                              choices = c("All", "Recipients", "Donors")
+                            ),
+                            selectInput(
                               "split_by",
                               "Choose grouping variable:",
                               choices = variable_mapping[names(variable_mapping) != "Age"]

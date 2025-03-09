@@ -105,7 +105,7 @@ observeEvent(input$plot_bttn, {
         ) +
         labs(x = x_var, y = y_var)
       
-    } else if (!is.null(fill_var)) {
+    } else if (!is.null(fill_var) && !is.null(y_var)) {
       summary_plot <- ggplot(data, aes(
         x = interaction(!!sym(fill_var), !!sym(x_var), sep = " | "),
         y = !!sym(y_var)

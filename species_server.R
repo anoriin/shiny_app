@@ -124,63 +124,25 @@ observe({
   }
 })
 observeEvent(input$generate_summary2, {
-  req(selected_data(), input$taxa_level2, input$selected_taxa, input$split_by, input$split_by2)
+  req(selected_data(), input$taxa_level2, input$species2_subset_data, input$selected_taxa, input$split_by, input$split_by2)
   plot_requested_ss2(TRUE)
-  data <- selected_data()
-  metadata <- data$metadata
+  data <- filter_data(reactive(input$species2_subset_data))()
   taxa_level2 <- input$taxa_level2
   selected_taxa <- input$selected_taxa
-  if (length(selected_taxa) == 0) {
-    stop("No taxa selected. Please select at least one taxon.")
-  }
   split_by <- input$split_by
   split_by2 <- input$split_by2
   # Aggregate taxa
   taxa_data <- aggregate_taxa(data$abundance, taxa_level2)
   # Subset taxa data to include only the selected taxa
   taxa_data <- taxa_data[, colnames(taxa_data) %in% selected_taxa, drop = FALSE]
-  relabu_barplot_data <- cbind(Sample = rownames(taxa_data), taxa_data)
-  relabu_barplot_data <- merge(relabu_barplot_data, data$metadata, by.x = "Sample", by.y = "Run")
-  taxa_columns <- colnames(taxa_data)  # Get taxa column names
-  relabu_barplot_data[taxa_columns] <- sapply(relabu_barplot_data[taxa_columns], as.numeric)
-  # Group by metadata column and calculate the mean abundance for each group
-  if (split_by2 != "None") {
-    grouped_data <- relabu_barplot_data %>%
-      group_by(.data[[split_by]], .data[[split_by2]]) %>%
-      summarise(across(all_of(taxa_columns), ~ mean(.x, na.rm = TRUE), .names = "{.col}"))
-    relabu_long <- grouped_data %>%
-      pivot_longer(
-        cols = -c(1, 2),  # Exclude the group columns (split_by, split_by2)
-        names_to = "Taxa",
-        values_to = "Abundance"
-      )
-    relabu_long$Group <- interaction(relabu_long[[split_by]], relabu_long[[split_by2]], drop = TRUE)
-  } else {
-    grouped_data <- relabu_barplot_data %>%
-      group_by(.data[[split_by]]) %>%
-      summarise(across(all_of(taxa_columns), ~ mean(.x, na.rm = TRUE), .names = "{.col}"))
-    relabu_long <- grouped_data %>%
-      pivot_longer(
-        cols = -1,  # Exclude the group columns (split_by, split_by2)
-        names_to = "Taxa",
-        values_to = "Abundance"
-      )
-    relabu_long$Group <- relabu_long[[split_by]]
-  }
-  relabu_barplot <- ggplot(relabu_long, aes(x = Group, y = Abundance, fill = Taxa)) +
-    geom_bar(stat = "identity") +
-    coord_flip() +
-    theme_minimal() +
-    labs(
-      title = "Mean Relative Abundance of Taxa Grouped by Condition",
-      x = "Group",
-      y = "Mean Relative Abundance (/100)",
-      fill = "Taxa"
-    ) +
-    theme(
-      axis.text.y = element_text(size = 8),  # Adjust y-axis text size for readability
-      axis.text.x = element_text(size = 10)  # Adjust x-axis text size
-    )
+  # Create relative abundance barplot
+  relabu_barplot <- generate_abuplot(
+    selected_data = list(abundance = taxa_data, metadata = data$metadata),
+    "abundance",
+    selected_taxa,
+    split_by,
+    split_by2
+  )
   output$relabu_plot <- renderPlotly({
     ggplotly(relabu_barplot)
   })
