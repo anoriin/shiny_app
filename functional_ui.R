@@ -51,7 +51,8 @@ tabPanel("Functional Profiling",
                         ),
                         mainPanel(
                           uiOutput("warning8"),
-                          plotlyOutput("genesabu_plot")
+                          plotlyOutput("genesabu_plot"),
+                          dataTableOutput("genesabu_table")
                         )
                       )
                     ),
@@ -139,7 +140,8 @@ tabPanel("Functional Profiling",
                         ),
                         mainPanel(
                           uiOutput("warning10"),
-                          plotlyOutput("pwabu_plot")
+                          plotlyOutput("pwabu_plot"),
+                          dataTableOutput("pwabu_table")
                         )
                       )
                     ),
@@ -260,7 +262,8 @@ tabPanel("Functional Profiling",
                         ),
                         mainPanel(
                           uiOutput("warning13"),
-                          plotlyOutput("enzymesabu_plot")
+                          plotlyOutput("enzymesabu_plot"),
+                          dataTableOutput("enzymesabu_table")
                         )
                       )
                     ),

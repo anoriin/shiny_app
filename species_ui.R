@@ -106,7 +106,8 @@ tabPanel("Abundance",
                           ),
                           mainPanel(
                             uiOutput("warning4"),
-                            plotlyOutput("relabu_plot")
+                            plotlyOutput("relabu_plot"),
+                            dataTableOutput("relabu_table")
                           )
                         )
                       )
@@ -261,16 +262,23 @@ tabPanel("Abundance",
                             selectInput(
                               "lefse_taxa_level",
                               "Choose taxonomic level to analyze:",
-                              choices = list("Kingdom"="k__", "Phylum"="p__", "Class"="c__", "Order"="o__", "Family"="f__", "Genus"="g__", "Species"="s__", "Strain"="t__")
+                              choices = list("Kingdom"="k__", 
+                                             "Phylum"="p__", 
+                                             "Class"="c__", 
+                                             "Order"="o__", 
+                                             "Family"="f__", 
+                                             "Genus"="g__", 
+                                             "Species"="s__", 
+                                             "Strain"="t__")
                             ),
                             selectInput(
                               "class",
-                              "Choose class variable (must be dichotomous):",
+                              "Choose class variable:",
                               choices = variable_mapping[names(variable_mapping) %in% c("Response", "Sex", "Pre- or Post-FMT")]
                             ),
                             selectInput(
                               "subclass",
-                              "Choose subclass variable (must be dichotomous):",
+                              "Choose subclass variable:",
                               choices = c("None", variable_mapping[names(variable_mapping) %in% c("Response", "Sex", "Pre- or Post-FMT")])
                             ),
                             numericInput(

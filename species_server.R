@@ -136,15 +136,22 @@ observeEvent(input$generate_summary2, {
   # Subset taxa data to include only the selected taxa
   taxa_data <- taxa_data[, colnames(taxa_data) %in% selected_taxa, drop = FALSE]
   # Create relative abundance barplot
-  relabu_barplot <- generate_abuplot(
+  relabu_result <- generate_abuplot(
     selected_data = list(abundance = taxa_data, metadata = data$metadata),
     "abundance",
     selected_taxa,
     split_by,
     split_by2
   )
+  relabu_barplot <- relabu_result[[1]]
+  relabu_table <- relabu_result[[2]]
   output$relabu_plot <- renderPlotly({
     ggplotly(relabu_barplot)
+  })
+  output$relabu_table <- renderDataTable({
+    req(relabu_table)
+    relabu_table <- as.data.frame(relabu_table)
+    datatable(relabu_table, options = list(pageLength = 10, scrollX = TRUE))
   })
 })
 
@@ -281,14 +288,6 @@ observeEvent(input$refresh_beta, {
 })
 
 # LEfSe
-observeEvent(input$subclass, {
-  if (input$subclass == "None") {
-    updateNumericInput(session, "wilcoxon_alpha", value = NA) # Reset value
-    shinyjs::disable("wilcoxon_alpha")
-  } else {
-    shinyjs::enable("wilcoxon_alpha", value = 0.05)
-  }
-})
 no_donor_data <- reactive({
   remove_samples(selected_data(), "Donor")
 })

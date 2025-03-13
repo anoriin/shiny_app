@@ -85,10 +85,22 @@ generate_abuplot <- function(selected_data, feature, selected_features, split_by
     plot_data_long <- plot_data_long %>%
       mutate(Group = !!sym(split_by))
   }
+  # Perform pairwise Wilcoxon test with no correction
+  pvalue_data <- plot_data_long %>%
+    group_by(Feature) %>%
+    summarise(
+      PairwiseP = list(as.data.frame(as.table(pairwise.wilcox.test(Abundance, Group, p.adjust.method = "none", exact = FALSE)$p.value)))
+    ) %>%
+    unnest(PairwiseP) %>%
+    mutate(Comparison = paste(Var1, "vs.", Var2)) %>%
+    rename(PValue = Freq) %>%
+    select(Feature, Comparison, PValue) %>%
+    mutate(PValue = round(PValue, 4)) %>%
+    arrange(PValue)
   # Generate the barplot
   barplot <- ggplot(plot_data_long, aes(x = Group, y = Abundance, fill = Feature)) +
     stat_summary(fun = mean, geom = "bar", position = position_dodge(width = 0.8), width = 0.6) +  
-    geom_point(position=position_dodge(width=0.8), shape = 16) +
+    geom_point(aes(fill = Feature), position = position_jitterdodge(jitter.width = 0.2, dodge.width = 0.8), shape = 16, colour = "black") +
     labs(
       x = "Group",
       y = "Relative Abundance (CPM)",
@@ -101,7 +113,7 @@ generate_abuplot <- function(selected_data, feature, selected_features, split_by
       legend.box = "horizontal"
     ) +
     theme_minimal()
-  return(barplot)
+  return(list(barplot, pvalue_data))
 }
 
 # Function to generate barplots with fold changes (functional profiling)

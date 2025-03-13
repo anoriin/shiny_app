@@ -83,7 +83,7 @@ ui <- navbarPage(
 
 # Define server logic
 server <- function(input, output, session) {
-  source("helpers.R", local = TRUE)$value # have to run separately, why?
+  source("helpers.R", local = TRUE)$value
   source("home_server.R", local = TRUE)$value
   source("metadata_server.R", local = TRUE)$value
   source("species_server.R", local = TRUE)$value
