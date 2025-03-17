@@ -63,7 +63,7 @@ aggregate_taxa <- function(abundance_matrix, level_prefix) {
   return(aggregated_matrix)
 }
 
-# Function to generate relative abundance barplots
+# Function to generate relative abundance barplots with facet_wrap
 generate_abuplot <- function(selected_data, feature, selected_features, split_by, split_by2) {
   data <- selected_data[[feature]][, selected_features, drop = FALSE]
   plot_data <- cbind(Sample = rownames(data), data)
@@ -85,34 +85,49 @@ generate_abuplot <- function(selected_data, feature, selected_features, split_by
     plot_data_long <- plot_data_long %>%
       mutate(Group = !!sym(split_by))
   }
-  # Perform pairwise Wilcoxon test with no correction
+  # Ensure split_by2 is a valid fill variable
+  plot_data_long <- plot_data_long %>%
+    mutate(FillGroup = if (split_by2 != "None") !!sym(split_by2) else "None")
+  # Perform pairwise Wilcoxon test with BH correction
   pvalue_data <- plot_data_long %>%
     group_by(Feature) %>%
     summarise(
-      PairwiseP = list(as.data.frame(as.table(pairwise.wilcox.test(Abundance, Group, p.adjust.method = "none", exact = FALSE)$p.value)))
+      PairwiseP = list(as.data.frame(as.table(pairwise.wilcox.test(Abundance, Group, p.adjust.method = "BH", exact = FALSE)$p.value)))
     ) %>%
     unnest(PairwiseP) %>%
     mutate(Comparison = paste(Var1, "vs.", Var2)) %>%
-    rename(PValue = Freq) %>%
-    select(Feature, Comparison, PValue) %>%
-    mutate(PValue = round(PValue, 4)) %>%
-    arrange(PValue)
-  # Generate the barplot
-  barplot <- ggplot(plot_data_long, aes(x = Group, y = Abundance, fill = Feature)) +
+    rename(AdjustedPValue = Freq) %>%
+    select(Feature, Comparison, AdjustedPValue) %>%
+    mutate(AdjustedPValue = round(AdjustedPValue, 4)) %>%
+    arrange(AdjustedPValue)
+  # Create significance labels based on p-value thresholds
+  pvalue_data <- pvalue_data %>%
+    mutate(Significance = case_when(
+      AdjustedPValue < 0.01 ~ "***",
+      AdjustedPValue < 0.05 ~ "**",
+      AdjustedPValue < 0.1 ~ "*",
+      TRUE ~ ""
+    ))
+  # Generate the barplot with facet_wrap
+  barplot <- ggplot(plot_data_long, aes(x = !!sym(split_by), y = Abundance, fill = FillGroup)) +
     stat_summary(fun = mean, geom = "bar", position = position_dodge(width = 0.8), width = 0.6) +  
-    geom_point(aes(fill = Feature), position = position_jitterdodge(jitter.width = 0.2, dodge.width = 0.8), shape = 16, colour = "black") +
+    geom_point(
+      position = if (split_by2 != "None") position_jitterdodge(jitter.width = 0.2, dodge.width = 0.8) else position_jitter(width = 0.2),
+      shape = 16, colour = "black"
+    ) +
     labs(
       x = "Group",
       y = "Relative Abundance (CPM)",
-      fill = "Feature"
+      fill = if (split_by2 != "None") split_by2 else NULL
     ) +
     theme(
       axis.text.y = element_text(size = 8),  # Adjust y-axis text size for readability
       axis.text.x = element_text(size = 10),  # Adjust x-axis text size
-      legend.position="bottom",
+      legend.position = "bottom",
       legend.box = "horizontal"
     ) +
-    theme_minimal()
+    theme_minimal() +
+    facet_wrap(~Feature, scales = "free_y")  # Add facet wrap for multiple features
   return(list(barplot, pvalue_data))
 }
 

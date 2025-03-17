@@ -156,20 +156,10 @@ observeEvent(input$generate_summary2, {
 })
 
 # ALPHA DIVERSITY PLOT
-# Reactive expression for filtering out donor samples - for alpha diversity
-filtered_data <- reactive({
-  req(selected_data())
-  data <- selected_data()
-  include_donors <- ifelse(is.null(input$include_donors), TRUE, input$include_donors)
-  if (!include_donors) {
-    data <- remove_samples(data, "Donor")
-  }
-  return(data)
-})
 observeEvent(input$refresh_alpha, {
-  req(filtered_data(), input$adiversity_taxa_level, input$x_axis, input$diversity_index, input$colour_by)
+  req(input$adiversity_taxa_level, input$ad_subset_data, input$x_axis, input$diversity_index, input$colour_by)
   plot_requested_ad(TRUE)
-  adiversity_data <- filtered_data()
+  adiversity_data <- filter_data(reactive(input$ad_subset_data))()
   adiversity_taxa_level <- input$adiversity_taxa_level
   x_axis <- input$x_axis
   diversity_index <- input$diversity_index
@@ -179,11 +169,13 @@ observeEvent(input$refresh_alpha, {
   shannon <- diversity(adiversity_taxa_data, index = "shannon")
   simpson <- diversity(adiversity_taxa_data, index = "simpson")
   invsimpson <- diversity(adiversity_taxa_data, index = "invsimpson")
+  observed <- observed <- rowSums(adiversity_taxa_data > 0)
   diversity_results <- data.frame(
     Sample = adiversity_data$metadata$Run,
     Shannon = shannon,
     Simpson = simpson,
-    InvSimpson = invsimpson
+    InvSimpson = invsimpson,
+    Observed = observed
   )
   row.names(diversity_results) <- diversity_results$Sample
   diversity_results$Sample <- NULL
@@ -223,26 +215,16 @@ observeEvent(input$refresh_alpha, {
     p_value_df <- as.data.frame(as.table(result$p.value))
     data.frame(
       Comparison = paste(p_value_df$Var1, p_value_df$Var2, sep = " vs "),
-      P_Value = p_value_df$Freq
+      AdjustedP_Value = p_value_df$Freq
     )
   })
 })
 
 # BETA DIVERSITY
-# Reactive expression for filtering out donor samples - for beta diversity
-filtered_data2 <- reactive({
-  req(selected_data())
-  data <- selected_data()
-  include_donors <- ifelse(is.null(input$include_donors2), TRUE, input$include_donors2)
-  if (!include_donors) {
-    data <- remove_samples(data, "Donor")
-  }
-  return(data)
-})
 observeEvent(input$refresh_beta, {
-  req(filtered_data2(), input$bdiversity_taxa_level, input$method, input$k, input$colour_by2, input$shape_by)
+  req(input$bdiversity_taxa_level, input$bd_subset_data, input$method, input$k, input$colour_by2, input$shape_by)
   plot_requested_bd(TRUE)
-  bdiversity_data <- filtered_data2()
+  bdiversity_data <- filter_data(reactive(input$bd_subset_data))()
   method <- input$method
   k <- input$k
   colour_by2 <- input$colour_by2
@@ -252,7 +234,7 @@ observeEvent(input$refresh_beta, {
   distance_matrix <- vegdist(taxa_data, method = method)
   metaMDS_result <- metaMDS(distance_matrix, distance = method, k = k, trymax = 100)
   beta_diversity_data <- data.frame(PC1 = metaMDS_result$points[, 1], PC2 = metaMDS_result$points[, 2])
-  metadata <- filtered_data2()$metadata
+  metadata <- bdiversity_data$metadata
   if (shape_by != "None") {
     aes_params <- aes(
       x = beta_diversity_data$PC1,
@@ -268,14 +250,15 @@ observeEvent(input$refresh_beta, {
     )
   }
   beta_diversity_plot <- ggplot(metadata, aes_params) +
-                            geom_point(na.rm = TRUE, size = 3, alpha = 0.7) +
-                            stat_ellipse() + 
-                            labs(x = "Axis 1", y = "Axis 2") +
-                            theme_minimal() +
-                            theme(
-                              axis.title.x = element_text(size = 14),
-                              axis.title.y = element_text(size = 14)
-                            )
+    geom_point(na.rm = TRUE, size = 2, alpha = 0.7) +
+    stat_ellipse() + 
+    geom_text(aes(label = patient), nudge_y = 0.1, size = 2) +  # Add text labels above points
+    labs(x = "Axis 1", y = "Axis 2") +
+    theme_minimal() +
+    theme(
+      axis.title.x = element_text(size = 14),
+      axis.title.y = element_text(size = 14)
+    )
   output$b_diversity_plot <- renderPlotly({
     ggplotly(beta_diversity_plot)
   })

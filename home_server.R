@@ -92,6 +92,8 @@ selected_data <- reactive({
   load(file_path, envir = loaded_env)
   dataset_name <- ls(loaded_env)[1]
   dataset <- get(dataset_name, envir = loaded_env)
+  dataset$metadata$timepoint <- factor(dataset$metadata$timepoint, ordered = FALSE)
+  dataset$metadata$timepoint <- relevel(dataset$metadata$timepoint, ref = "Pre_FMT")
   return(dataset)
 })
 

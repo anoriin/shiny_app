@@ -18,10 +18,12 @@ observeEvent(selected_data(), {
   
   # Explicitly remove plots by setting output to NULL
   output$genesabu_plot <- renderPlotly(NULL)
+  output$genesabu_table <- renderDataTable(NULL)
   output$genesfc_plot <- renderPlotly(NULL)
   output$genesfc_table <- renderDataTable(NULL)
   
   output$pwabu_plot <- renderPlotly(NULL)
+  output$pwabu_table <- renderDataTable(NULL)
   output$pwfc_plot <- renderPlotly(NULL)
   output$pwfc_table <- renderDataTable(NULL)
   
@@ -29,6 +31,7 @@ observeEvent(selected_data(), {
   output$pwcov_table <- renderDataTable(NULL)
   
   output$enzymesabu_plot <- renderPlotly(NULL)
+  output$enzymesabu_table <- renderDataTable(NULL)
   output$enzymesfc_plot <- renderPlotly(NULL)
   output$enzymesfc_table <- renderDataTable(NULL)
 })
@@ -82,7 +85,7 @@ update_metadata_selection2 <- function(input_subset, input_split_by2) {
 generate_abundance_plot <- function(input_trigger, input_subset, data_key, input_selected, input_split_by, input_split_by2, output_plot, output_table) {
   observeEvent(input_trigger(), {
     if (output_plot == "genesabu_plot") { plot_requested8(TRUE) }
-    if (output_plot == "pathwaysabu_plot") { plot_requested10(TRUE) }
+    if (output_plot == "pwabu_plot") { plot_requested10(TRUE) }
     if (output_plot == "enzymesabu_plot") { plot_requested13(TRUE) }
     req(selected_data(), input_selected(), input_split_by(), input_split_by2())  # Ensure necessary inputs are available
     selected_data <- filter_data(input_subset)()  # Get subsetted data
