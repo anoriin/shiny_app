@@ -2,6 +2,7 @@ library(shiny)
 library(bslib)
 library(shinyjs)
 library(ggplot2)
+library(ggsignif)
 library(DT)
 library(tidyr)
 library(dplyr)
@@ -11,7 +12,6 @@ library(lefser)
 library(plotly)
 library(googledrive)
 
-# Define UI
 ui <- navbarPage(
   title = "FMT Microbiome Explorer",
   position = "fixed-top",
@@ -81,7 +81,6 @@ ui <- navbarPage(
   source("functional_ui.R", local = TRUE)$value
 )
 
-# Define server logic
 server <- function(input, output, session) {
   source("helpers.R", local = TRUE)$value
   source("home_server.R", local = TRUE)$value

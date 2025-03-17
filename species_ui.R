@@ -140,9 +140,14 @@ tabPanel("Abundance",
                               )
                             ),
                             selectInput(
+                              "ad_subset_data",
+                              "Subset data:",
+                              choices = c("All", "Recipients", "Donors")
+                            ),
+                            selectInput(
                               "diversity_index",
                               "Select diversity index:",
-                              choices = c("Simpson", "Shannon", "InvSimpson")
+                              choices = c("Observed", "Simpson", "Shannon", "InvSimpson")
                             ),
                             selectInput(
                               "x_axis",
@@ -153,11 +158,6 @@ tabPanel("Abundance",
                               "colour_by",
                               "Colour points by:",
                               choices = c("None", variable_mapping[names(variable_mapping) != "Age"])
-                            ),
-                            checkboxInput(
-                              "include_donors",
-                              "Include donors",
-                              value = TRUE
                             ),
                             selectInput(
                               "adjustment_method",
@@ -205,6 +205,11 @@ tabPanel("Abundance",
                                 )
                             ),
                             selectInput(
+                              "bd_subset_data",
+                              "Subset data:",
+                              choices = c("All", "Recipients")
+                            ),
+                            selectInput(
                               "method",
                               "Choose a distance method:",
                               choices = c("bray", "euclidean", "manhattan", "jaccard")
@@ -226,11 +231,6 @@ tabPanel("Abundance",
                               max = 10,
                               value = 5,
                               step = 1
-                            ),
-                            checkboxInput(
-                              "include_donors2",
-                              "Include donors",
-                              value = TRUE
                             ),
                             actionButton("refresh_beta", "Plot")
                           ),
@@ -269,7 +269,7 @@ tabPanel("Abundance",
                                              "Family"="f__", 
                                              "Genus"="g__", 
                                              "Species"="s__", 
-                                             "Strain"="t__")
+                                             "SGBs"="t__")
                             ),
                             selectInput(
                               "class",
