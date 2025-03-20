@@ -1,12 +1,12 @@
-tabPanel("Abundance",
+tabPanel("Taxonomic Profiling",
          useShinyjs(),
-         titlePanel("Abundance"),
+         titlePanel("Taxonomic Profiling"),
            tabsetPanel(
              tabPanel("Summary Statistics",
                       fluidPage(
                         h3("Top Taxa"),
                         card(
-                          p("Visualize the top mean abundance levels of microbes.")
+                          p("Use this tool to visualize the top mean abundance levels of microbes at various taxa levels.")
                         ),
                         tags$style(HTML("
                           .card {
@@ -50,13 +50,13 @@ tabPanel("Abundance",
                             actionButton("generate_summary1", "Plot")
                           ),
                           mainPanel(
-                            uiOutput("warning3"),
+                            uiOutput("warning_ss1"),
                             plotlyOutput("top_taxa_plot")
                           )
                         ),
                         h3("Taxa by Condition"),
                         card(
-                          p("Visualize the mean abundance levels of microbes, at various taxa levels, across grouped samples.")
+                          p("Use this tool to visualize the mean abundance levels of microbes, at various taxa levels, across grouped samples.")
                         ),
                         tags$style(HTML("
                           .card {
@@ -105,7 +105,7 @@ tabPanel("Abundance",
                             actionButton("generate_summary2", "Plot")
                           ),
                           mainPanel(
-                            uiOutput("warning4"),
+                            uiOutput("warning_ss2"),
                             plotlyOutput("relabu_plot"),
                             dataTableOutput("relabu_table")
                           )
@@ -116,7 +116,8 @@ tabPanel("Abundance",
                       fluidPage(
                         h3("Alpha Diversity"),
                         card(
-                          p("Alpha diversity measures the extent of microbial diversity within a specific area or ecosystem. In this context, we are examining the alpha diversity of the microbiome, at the strain level, in stool samples collected from melanoma patients undergoing FMT.")
+                          tags$div("Use this tool to visualize the alpha diversity (richness and evenness) of microbial samples at various taxa levels, across groups."),
+                          tags$div("P-values were calculated using the wilcoxon test with BH correction, where applicable.")
                         ),
                         tags$style(HTML("
                           .card {
@@ -162,12 +163,12 @@ tabPanel("Abundance",
                             selectInput(
                               "adjustment_method",
                               "Select p-value adjustment method (if more than two groups):",
-                              choices = c("holm", "hochberg", "hommel", "bonferroni", "BY", "fdr", "none")
+                              choices = c("holm", "hochberg", "bonferroni", "BY", "fdr", "none")
                             ),
                             actionButton("refresh_alpha", "Plot")
                           ),
                           mainPanel(
-                            uiOutput("warning5"),
+                            uiOutput("warning_ad"),
                             plotlyOutput("a_diversity_plot"),
                             my_card(
                               header = "Wilcoxon Rank Sum Test Results",
@@ -181,7 +182,8 @@ tabPanel("Abundance",
                       fluidPage(
                         h3("Beta Diversity"),
                         card(
-                          p("Beta diversity measures the difference between two microbial samples by comparing the number of unique taxa, at the strain level, specific to each ecosystem.")
+                          tags$div("Use this tool to visualize the beta diversity (dissimilarity) of microbial samples at various taxa levels, across groups."),
+                          tags$div("P-values were calculated using the PERMANOVA test.")
                         ),
                         tags$style(HTML("
                           .card {
@@ -235,12 +237,59 @@ tabPanel("Abundance",
                             actionButton("refresh_beta", "Plot")
                           ),
                           mainPanel(
-                            uiOutput("warning6"),
+                            uiOutput("warning_bd"),
                             plotlyOutput("b_diversity_plot"),
                             my_card(
                               header = "Permutational Multivariate Analysis of Variance (PERMANOVA) Results",
                               tableOutput("permanova_tests")
                             )
+                          )
+                        )
+                      )
+             ),
+             tabPanel("Differential Abundance", 
+                      fluidPage(
+                        h3("Differential Abundance"),
+                        card(
+                          tags$div("Differential abundance is performed using Maaslin2 (Multivariable Association Discovery in Population-scale Meta-omics Studies)."),
+                          tags$div("Maaslin2 is a statistical tool used to identify associations between microbial community composition and metadata using multivariable linear models."),
+                          tags$div("Note: donor data was removed from this analysis.")
+                        ),
+                        tags$style(HTML("
+                          .card {
+                            margin-bottom: 20px;
+                          }
+                        ")),
+                        sidebarLayout(
+                          sidebarPanel(
+                            selectInput(
+                              "maas_taxa_level",
+                              "Choose taxonomic level to analyze:",
+                              choices = list("Kingdom"="k__", 
+                                             "Phylum"="p__", 
+                                             "Class"="c__", 
+                                             "Order"="o__", 
+                                             "Family"="f__", 
+                                             "Genus"="g__", 
+                                             "Species"="s__", 
+                                             "SGBs"="t__")
+                            ),
+                            selectInput(
+                              "covariates",
+                              "Choose covariates:",
+                              choices = c(variable_mapping[names(variable_mapping) %in% c("Response", 
+                                                                                          "Sex", 
+                                                                                          "Pre- or Post-FMT", 
+                                                                                          "Age", 
+                                                                                          "S point")], 
+                                          "Response + Timepoint"),
+                              multiple = TRUE
+                            ),
+                            actionButton("run2", label = "Run")
+                          ),
+                          mainPanel(
+                            uiOutput("warning_maas"),
+                            dataTableOutput("maas_table")
                           )
                         )
                       )
@@ -302,10 +351,10 @@ tabPanel("Abundance",
                               max = 4,
                               value = 2
                             ),
-                            actionButton("run", label = "Run LEfSe")
+                            actionButton("run", label = "Run")
                           ),
                           mainPanel(
-                            uiOutput("warning7"),
+                            uiOutput("warning_lefse"),
                             plotlyOutput("lefse_plot"),
                             dataTableOutput("lefse_table")
                           )

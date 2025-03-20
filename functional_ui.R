@@ -2,7 +2,11 @@ tabPanel("Functional Profiling",
          titlePanel("Functional Profiling"),
          tabsetPanel(
            tabPanel("Gene Families",
-                    h3("Gene Family Abundance"),
+                    tags$style(HTML("
+                          .card {
+                            margin-bottom: 20px;
+                          }
+                        ")),
                     card(
                       tags$div("UniRef90 is a protein sequence database that clusters sequences with at least 90% identity into gene families."), 
                       tags$div("These gene families represent groups of related proteins that likely perform similar functions and share a common evolutionary origin."),
@@ -14,8 +18,10 @@ tabPanel("Functional Profiling",
                             margin-bottom: 20px;
                           }
                         ")),
+                    h3("Gene Family Relative Abundance"),
                     card(
-                      p("Use the following tool to visualize the relative abundance of specific gene families across different groups.")
+                      tags$div("Use the following tool to visualize the relative abundance of specific gene families across different groups."),
+                      tags$div("P-values were calculated using the wilcoxon test with BH correction, where applicable.")
                     ),
                     tags$style(HTML("
                           .card {
@@ -56,6 +62,39 @@ tabPanel("Functional Profiling",
                         )
                       )
                     ),
+                    h3("Gene Family Differential Abundance"),
+                    card(
+                      tags$div("Use this tool to identify significant gene families associated with metadata variables."),
+                      tags$div("This analysis is performed using Maaslin2 (Multivariable Association Discovery in Population-scale Meta-omics Studies), which identifies associations between microbial community composition and metadata using multivariable linear models."),
+                      tags$div("Note: Donor data has been removed from this analysis.")
+                    ),
+                    tags$style(HTML("
+                          .card {
+                            margin-bottom: 20px;
+                          }
+                        ")),
+                    fluidPage(
+                      sidebarLayout(
+                        sidebarPanel(
+                          selectInput(
+                            "genes_covariates",
+                            "Choose covariates:",
+                            choices = c(variable_mapping[names(variable_mapping) %in% c("Response", 
+                                                                                        "Sex", 
+                                                                                        "Pre- or Post-FMT", 
+                                                                                        "Age", 
+                                                                                        "S point")], 
+                                        "Response + Timepoint"),
+                            multiple = TRUE
+                          ),
+                          actionButton("generate_genes_diffabundance_table", label = "Run")
+                        ),
+                        mainPanel(
+                          uiOutput("warning_genes_diffabundance"),
+                          dataTableOutput("genes_diffabundance_table")
+                        )
+                      )
+                    ),
                     h3("Gene Family Fold Changes"),
                     card(
                       tags$div("Use the following tool to visualize changes in the abundance of specific gene families pre-FMT (at baseline) vs. post-FMT in specific patient groups (no donors)."), 
@@ -92,7 +131,11 @@ tabPanel("Functional Profiling",
                     )
                   ),
            tabPanel("Pathways",
-                    h3("Pathway Abundance"),
+                    tags$style(HTML("
+                          .card {
+                            margin-bottom: 20px;
+                          }
+                        ")),
                     card(
                       tags$div("Pathway abundance represents how active or prevalent specific biological pathways are within a microbial community based on the genes present in the sample."),
                       tags$div("These values give us insight into the community's functional capabilities, such as how it processes nutrients or responds to its environment."),
@@ -103,8 +146,10 @@ tabPanel("Functional Profiling",
                             margin-bottom: 20px;
                           }
                         ")),
+                    h3("Pathway Relative Abundance"),
                     card(
-                      p("Use the following tool to visualize the relative abundance of specific pathways across different groups.")
+                      tags$div("Use the following tool to visualize the relative abundance of specific pathways across different groups."),
+                      tags$div("P-values were calculated using the wilcoxon test with BH correction, where applicable.")
                     ),
                     tags$style(HTML("
                           .card {
@@ -142,6 +187,39 @@ tabPanel("Functional Profiling",
                           uiOutput("warning10"),
                           plotlyOutput("pwabu_plot"),
                           dataTableOutput("pwabu_table")
+                        )
+                      )
+                    ),
+                    h3("Pathway Differential Abundance"),
+                    card(
+                      tags$div("Use this tool to identify significant pathways associated with metadata variables."),
+                      tags$div("This analysis is performed using Maaslin2 (Multivariable Association Discovery in Population-scale Meta-omics Studies), which identifies associations between microbial community composition and metadata using multivariable linear models."),
+                      tags$div("Note: Donor data has been removed from this analysis.")
+                    ),
+                    tags$style(HTML("
+                          .card {
+                            margin-bottom: 20px;
+                          }
+                        ")),
+                    fluidPage(
+                      sidebarLayout(
+                        sidebarPanel(
+                          selectInput(
+                            "pw_covariates",
+                            "Choose covariates:",
+                            choices = c(variable_mapping[names(variable_mapping) %in% c("Response", 
+                                                                                        "Sex", 
+                                                                                        "Pre- or Post-FMT", 
+                                                                                        "Age", 
+                                                                                        "S point")], 
+                                        "Response + Timepoint"),
+                            multiple = TRUE
+                          ),
+                          actionButton("generate_pw_diffabundance_table", label = "Run")
+                        ),
+                        mainPanel(
+                          uiOutput("warning_pw_diffabundance"),
+                          dataTableOutput("pw_diffabundance_table")
                         )
                       )
                     ),
@@ -214,7 +292,11 @@ tabPanel("Functional Profiling",
                     )
            ),
            tabPanel("Enzymes",
-                    h3("Enzyme Abundance"),
+                    tags$style(HTML("
+                          .card {
+                            margin-bottom: 20px;
+                          }
+                        ")),
                     card(
                       tags$div("Enzyme Commission (EC) numbers classify enzymes based on the type of reaction they catalyze. They are used to annotate and categorize enzymes in metagenomic datasets."),
                       tags$div("EC abundance values represent how active or prevalent specific enzyme-driven reactions are within a microbial community based on the genes present in the sample."),
@@ -225,8 +307,10 @@ tabPanel("Functional Profiling",
                             margin-bottom: 20px;
                           }
                         ")),
+                    h3("Enzyme Relative Abundance"),
                     card(
-                      p("Use the following tool to visualize the relative abundance of specific enzymes across different groups.")
+                      tags$div("Use the following tool to visualize the relative abundance of specific enzymes across different groups."),
+                      tags$div("P-values were calculated using the wilcoxon test with BH correction, where applicable.")
                     ),
                     tags$style(HTML("
                           .card {
@@ -264,6 +348,39 @@ tabPanel("Functional Profiling",
                           uiOutput("warning13"),
                           plotlyOutput("enzymesabu_plot"),
                           dataTableOutput("enzymesabu_table")
+                        )
+                      )
+                    ),
+                    h3("Enzyme Differential Abundance"),
+                    card(
+                      tags$div("Use this tool to identify significant enzyme commissions associated with metadata variables."),
+                      tags$div("This analysis is performed using Maaslin2 (Multivariable Association Discovery in Population-scale Meta-omics Studies), which identifies associations between microbial community composition and metadata using multivariable linear models."),
+                      tags$div("Note: Donor data has been removed from this analysis.")
+                    ),
+                    tags$style(HTML("
+                          .card {
+                            margin-bottom: 20px;
+                          }
+                        ")),
+                    fluidPage(
+                      sidebarLayout(
+                        sidebarPanel(
+                          selectInput(
+                            "ec_covariates",
+                            "Choose covariates:",
+                            choices = c(variable_mapping[names(variable_mapping) %in% c("Response", 
+                                                                                        "Sex", 
+                                                                                        "Pre- or Post-FMT", 
+                                                                                        "Age", 
+                                                                                        "S point")], 
+                                        "Response + Timepoint"),
+                            multiple = TRUE
+                          ),
+                          actionButton("generate_ec_diffabundance_table", label = "Run")
+                        ),
+                        mainPanel(
+                          uiOutput("warning_ec_diffabundance"),
+                          dataTableOutput("ec_diffabundance_table")
                         )
                       )
                     ),

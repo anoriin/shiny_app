@@ -11,6 +11,7 @@ library(SummarizedExperiment)
 library(lefser)
 library(plotly)
 library(googledrive)
+library(Maaslin2)
 
 ui <- navbarPage(
   title = "FMT Microbiome Explorer",

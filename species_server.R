@@ -1,19 +1,30 @@
 plot_requested_ss1 <- reactiveVal(FALSE)
 plot_requested_ss2 <- reactiveVal(FALSE)
+table_requested_ss2 <- reactiveVal(FALSE)
 plot_requested_ad <- reactiveVal(FALSE)
+table_requested_ad <- reactiveVal(FALSE)
 plot_requested_bd <- reactiveVal(FALSE)
+table_requested_bd <- reactiveVal(FALSE)
 plot_requested_lefse <- reactiveVal(FALSE)
+table_requested_lefse <- reactiveVal(FALSE)
+table_requested_maas <- reactiveVal(FALSE)
 
 observeEvent(selected_data(), {
   plot_requested_ss1(FALSE)
   plot_requested_ss2(FALSE)
+  table_requested_ss2(FALSE)
   plot_requested_ad(FALSE)
+  table_requested_ad(FALSE)
   plot_requested_bd(FALSE)
+  table_requested_bd(FALSE)
   plot_requested_lefse(FALSE)
+  table_requested_lefse(FALSE)
+  table_requested_maas(FALSE)
   
   # Explicitly remove plots by setting output to NULL
   output$top_taxa_plot <- renderPlotly(NULL)
   output$relabu_plot <- renderPlotly(NULL)
+  output$relabu_table <- renderDataTable(NULL)
   
   output$a_diversity_plot <- renderPlotly(NULL)
   output$wilcoxon_tests <- renderTable(NULL)
@@ -23,14 +34,17 @@ observeEvent(selected_data(), {
  
   output$lefse_plot <- renderPlotly(NULL)
   output$lefse_table <- renderDataTable(NULL)
+  
+  output$maas_table <- renderDataTable(NULL)
 })
 
 # Dataset selection messages
-output$warning3 <- renderUI({ if (!plot_requested_ss1()) show_dataset_message() })
-output$warning4 <- renderUI({ if (!plot_requested_ss2()) show_dataset_message() })
-output$warning5 <- renderUI({ if (!plot_requested_ad()) show_dataset_message() })
-output$warning6 <- renderUI({ if (!plot_requested_bd()) show_dataset_message() })
-output$warning7 <- renderUI({ if (!plot_requested_lefse()) show_dataset_message() })
+output$warning_ss1 <- renderUI({ if (!plot_requested_ss1()) show_dataset_message() })
+output$warning_ss2 <- renderUI({ if (!plot_requested_ss2()) show_dataset_message() })
+output$warning_ad <- renderUI({ if (!plot_requested_ad()) show_dataset_message() })
+output$warning_bd <- renderUI({ if (!plot_requested_bd()) show_dataset_message() })
+output$warning_lefse <- renderUI({ if (!plot_requested_lefse()) show_dataset_message() })
+output$warning_maas <- renderUI({ if (!table_requested_maas()) show_dataset_message() })
 
 # SUMMARY STATISTICS
 # Barplot 1
@@ -86,7 +100,6 @@ observeEvent(input$generate_summary1, {
       geom_bar(stat = "identity", fill = "lightblue") +  # Single color since no groups
       theme_minimal() +
       labs(title = "Top Taxa by Mean Relative Abundance",
-           x = "Taxa",
            y = "Mean Relative Abundance (/100)") +
       theme(axis.text.x = element_text(angle = 30, hjust = 1))
   } else {
@@ -103,7 +116,6 @@ observeEvent(input$generate_summary1, {
       geom_bar(stat = "identity", position = "dodge") +  # Separate bars by group
       theme_minimal() +
       labs(title = "Top Taxa by Mean Relative Abundance (Grouped)",
-           x = "Taxa",
            y = "Mean Relative Abundance (/100)") +
       theme(axis.text.x = element_text(angle = 30, hjust = 1))
   }
@@ -126,6 +138,7 @@ observe({
 observeEvent(input$generate_summary2, {
   req(selected_data(), input$taxa_level2, input$species2_subset_data, input$selected_taxa, input$split_by, input$split_by2)
   plot_requested_ss2(TRUE)
+  table_requested_ss2(TRUE)
   data <- filter_data(reactive(input$species2_subset_data))()
   taxa_level2 <- input$taxa_level2
   selected_taxa <- input$selected_taxa
@@ -159,6 +172,7 @@ observeEvent(input$generate_summary2, {
 observeEvent(input$refresh_alpha, {
   req(input$adiversity_taxa_level, input$ad_subset_data, input$x_axis, input$diversity_index, input$colour_by)
   plot_requested_ad(TRUE)
+  table_requested_ad(TRUE)
   adiversity_data <- filter_data(reactive(input$ad_subset_data))()
   adiversity_taxa_level <- input$adiversity_taxa_level
   x_axis <- input$x_axis
@@ -224,6 +238,7 @@ observeEvent(input$refresh_alpha, {
 observeEvent(input$refresh_beta, {
   req(input$bdiversity_taxa_level, input$bd_subset_data, input$method, input$k, input$colour_by2, input$shape_by)
   plot_requested_bd(TRUE)
+  table_requested_bd(TRUE)
   bdiversity_data <- filter_data(reactive(input$bd_subset_data))()
   method <- input$method
   k <- input$k
@@ -277,6 +292,7 @@ no_donor_data <- reactive({
 observeEvent(input$run, {
   req(no_donor_data(), input$lefse_taxa_level, input$class, input$subclass, input$kw_alpha, input$wilcoxon_alpha, input$lda)
   plot_requested_lefse(TRUE)
+  table_requested_lefse(TRUE)
   data <- no_donor_data()
   class <- input$class
   subclass <- input$subclass
@@ -314,5 +330,31 @@ observeEvent(input$run, {
     select(Feature = Names, Score = scores)
   output$lefse_table <- renderDataTable({
     lefse_table
+  })
+})
+
+# Maaslin2 Differential abundance
+no_donor_data2 <- reactive({
+  remove_samples(selected_data(), "Donor")
+})
+observeEvent(input$run2, {
+  req(no_donor_data2(), input$maas_taxa_level, input$covariates)
+  table_requested_maas(TRUE)
+  data <- no_donor_data2()
+  covariates <- input$covariates
+  maas_taxa_level <- input$maas_taxa_level
+  taxa_data <- aggregate_taxa(data$abundance, maas_taxa_level)
+  data$metadata[["Response + Timepoint"]] <- 
+    interaction(data$metadata$response, data$metadata$timepoint)
+  metadata <- data$metadata[, covariates]
+  metadata <- as.data.frame(metadata)
+  rownames(metadata) <- data$metadata$Run
+  fit_data <- Maaslin2(
+    as.data.frame(taxa_data), as.data.frame(metadata),
+    output = 'output',
+    standardize = FALSE, cores = 4
+  )
+  output$maas_table <- renderDataTable({
+    fit_data$results
   })
 })
