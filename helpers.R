@@ -97,15 +97,15 @@ generate_abuplot <- function(selected_data, feature, selected_features, split_by
     unnest(PairwiseP) %>%
     mutate(Comparison = paste(Var1, "vs.", Var2)) %>%
     rename(AdjustedPValue = Freq) %>%
-    select(Feature, Comparison, AdjustedPValue) %>%
+    dplyr::select(Feature, Comparison, AdjustedPValue) %>%
     mutate(AdjustedPValue = round(AdjustedPValue, 4)) %>%
     arrange(AdjustedPValue)
   # Create significance labels based on p-value thresholds
   pvalue_data <- pvalue_data %>%
     mutate(Significance = case_when(
-      AdjustedPValue < 0.01 ~ "***",
-      AdjustedPValue < 0.05 ~ "**",
-      AdjustedPValue < 0.1 ~ "*",
+      AdjustedPValue < 0.001 ~ "***",
+      AdjustedPValue < 0.01 ~ "**",
+      AdjustedPValue < 0.05 ~ "*",
       TRUE ~ ""
     ))
   # Generate the barplot with facet_wrap
@@ -127,7 +127,8 @@ generate_abuplot <- function(selected_data, feature, selected_features, split_by
       legend.box = "horizontal"
     ) +
     theme_minimal() +
-    facet_wrap(~Feature, scales = "free_y")  # Add facet wrap for multiple features
+    facet_wrap(~Feature, scales = "free_y") + # Add facet wrap for multiple features
+    scale_fill_brewer(palette = "Dark2")
   return(list(barplot, pvalue_data))
 }
 
@@ -169,12 +170,18 @@ generate_fcplot <- function(selected_data, feature, selected_features, responder
     mutate(
       Log2FoldChange = ifelse(is.na(Log2FoldChange), 0, Log2FoldChange),
       Log2FoldChange = round(Log2FoldChange, 4),
-      PValue = round(PValue, 4)
+      PValue = round(PValue, 4),
+      Significance = case_when(
+        PValue < 0.001 ~ "***",
+        PValue < 0.01 ~ "**",
+        PValue < 0.05 ~ "*",
+        TRUE ~ ""
+      )
     )
   # Generate the fold change plot
   fc_plot <- ggplot(fc_data, aes(x = Feature, y = Log2FoldChange)) +
     geom_bar(stat = "identity", fill = "steelblue") +
-    geom_text(aes(label = ifelse(PValue < 0.05, "*", "")), vjust = -0.5) +
+    geom_text(aes(label = Significance), hjust = -3) +
     coord_flip() + 
     geom_hline(yintercept=0) +
     theme_minimal() +
