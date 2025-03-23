@@ -105,7 +105,8 @@ observeEvent(input$plot_bttn, {
         ) +
         labs(x = x_var, y = y_var)
       
-    } else if (!is.null(fill_var) && !is.null(y_var)) {
+    
+      } else if (!is.null(fill_var) && !is.null(y_var)) {
       summary_plot <- ggplot(data, aes(
         x = interaction(!!sym(fill_var), !!sym(x_var), sep = " | "),
         y = !!sym(y_var)
@@ -119,8 +120,8 @@ observeEvent(input$plot_bttn, {
           axis.text.x = element_text(hjust = 1)
         ) +
         labs(x = "Groups", y = y_var)
-      
-    } else {
+    
+      } else {
       invalid_text("⚠ Boxplot requires both X and Y variables.")
     }
   } else if (input$plot_type == "barplot") {

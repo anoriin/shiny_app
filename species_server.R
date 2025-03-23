@@ -46,6 +46,20 @@ output$warning_bd <- renderUI({ if (!plot_requested_bd()) show_dataset_message()
 output$warning_lefse <- renderUI({ if (!plot_requested_lefse()) show_dataset_message() })
 output$warning_maas <- renderUI({ if (!table_requested_maas()) show_dataset_message() })
 
+# Function to filter data based on subset selection
+filter_data <- function(input_subset) {
+  reactive({
+    req(selected_data())  # Ensure the data is loaded
+    if (input_subset() == "Donors") {
+      return(memoised_remove_samples(selected_data(), "Recipient"))
+    } else if (input_subset() == "Recipients") {
+      return(memoised_remove_samples(selected_data(), "Donor"))
+    } else {
+      return(selected_data())  # No filtering
+    }
+  })
+}
+
 # SUMMARY STATISTICS
 # Barplot 1
 # Change metadata variable selection dynamically 
@@ -65,9 +79,9 @@ observeEvent(input$species_subset_data, {
 species_filtered_data <- reactive({
   req(selected_data())
   if (input$species_subset_data == "Donors") {
-    remove_samples(selected_data(), "Recipient")
+    memoised_remove_samples(selected_data(), "Recipient")
   } else if (input$species_subset_data == "Recipients") {
-    remove_samples(selected_data(), "Donor")
+    memoised_remove_samples(selected_data(), "Donor")
   } else {
     selected_data()
   }
@@ -81,7 +95,7 @@ observeEvent(input$generate_summary1, {
   top_taxa <- input$top_taxa
   ss_split_by <- input$ss_split_by
   # Aggregate taxa
-  taxa_data <- aggregate_taxa(data$abundance, taxa_level)
+  taxa_data <- memoised_aggregate_taxa(data$abundance, taxa_level)
   # Compute top taxa (overall mean abundance, before grouping)
   top_taxa_values <- colMeans(taxa_data, na.rm = TRUE) %>%
     sort(decreasing = TRUE) %>%
@@ -99,7 +113,7 @@ observeEvent(input$generate_summary1, {
     top_taxa_barplot <- ggplot(taxa_long, aes(x = Taxa, y = Mean_Abundance)) +
       geom_bar(stat = "identity", fill = "lightblue") +  # Single color since no groups
       theme_minimal() +
-      labs(title = "Top Taxa by Mean Relative Abundance",
+      labs(title = paste("Top Taxa at the", names(taxa_choices)[taxa_choices == taxa_level], "Level by Mean Relative Abundance"),
            y = "Mean Relative Abundance (/100)") +
       theme(axis.text.x = element_text(angle = 30, hjust = 1))
   } else {
@@ -115,8 +129,7 @@ observeEvent(input$generate_summary1, {
     top_taxa_barplot <- ggplot(taxa_long, aes(x = Taxa, y = Mean_Abundance, fill = Group)) +
       geom_bar(stat = "identity", position = "dodge") +  # Separate bars by group
       theme_minimal() +
-      labs(title = "Top Taxa by Mean Relative Abundance (Grouped)",
-           y = "Mean Relative Abundance (/100)") +
+      labs(title = paste("Top Taxa at the", names(taxa_choices)[taxa_choices == taxa_level], "Level by Mean Relative Abundance"),           y = "Mean Relative Abundance (/100)") +
       theme(axis.text.x = element_text(angle = 30, hjust = 1))
   }
   output$top_taxa_plot <- renderPlotly({
@@ -130,7 +143,7 @@ observe({
   if (!is.null(selected_data())) {
     data <- selected_data()  # Load the data
     # Aggregate taxa data based on the selected taxonomic level
-    taxa_data <- aggregate_taxa(data$abundance, input$taxa_level2)
+    taxa_data <- memoised_aggregate_taxa(data$abundance, input$taxa_level2)
     # Update the selectize input choices with the columns of the aggregated taxa data
     updateSelectizeInput(session, "selected_taxa", choices = colnames(taxa_data), server = TRUE) 
   }
@@ -145,11 +158,11 @@ observeEvent(input$generate_summary2, {
   split_by <- input$split_by
   split_by2 <- input$split_by2
   # Aggregate taxa
-  taxa_data <- aggregate_taxa(data$abundance, taxa_level2)
+  taxa_data <- memoised_aggregate_taxa(data$abundance, taxa_level2)
   # Subset taxa data to include only the selected taxa
   taxa_data <- taxa_data[, colnames(taxa_data) %in% selected_taxa, drop = FALSE]
   # Create relative abundance barplot
-  relabu_result <- generate_abuplot(
+  relabu_result <- memoised_generate_abuplot(
     selected_data = list(abundance = taxa_data, metadata = data$metadata),
     "abundance",
     selected_taxa,
@@ -178,18 +191,19 @@ observeEvent(input$refresh_alpha, {
   x_axis <- input$x_axis
   diversity_index <- input$diversity_index
   colour_by <- input$colour_by
-  adjustment_method <- input$adjustment_method
-  adiversity_taxa_data <- aggregate_taxa(adiversity_data$abundance, adiversity_taxa_level)
+  adiversity_taxa_data <- memoised_aggregate_taxa(adiversity_data$abundance, adiversity_taxa_level)
   shannon <- diversity(adiversity_taxa_data, index = "shannon")
   simpson <- diversity(adiversity_taxa_data, index = "simpson")
   invsimpson <- diversity(adiversity_taxa_data, index = "invsimpson")
-  observed <- observed <- rowSums(adiversity_taxa_data > 0)
+  observed <- rowSums(adiversity_taxa_data > 0)
+  core <- rowMeans(adiversity_taxa_data)
   diversity_results <- data.frame(
     Sample = adiversity_data$metadata$Run,
     Shannon = shannon,
     Simpson = simpson,
     InvSimpson = invsimpson,
-    Observed = observed
+    Observed = observed,
+    Core = core
   )
   row.names(diversity_results) <- diversity_results$Sample
   diversity_results$Sample <- NULL
@@ -220,16 +234,44 @@ observeEvent(input$refresh_alpha, {
   output$a_diversity_plot <- renderPlotly({
     ggplotly(alpha_diversity_plot)
   })
-  output$wilcoxon_tests <- renderTable({
-    result <- pairwise.wilcox.test(
-      diversity_results[[diversity_index]],
-      adiversity_data$metadata[[x_axis]],
-      p.adjust.method = adjustment_method
+  output$wilcoxon_tests <- renderDataTable({
+    # Combine grouping variables into a single interaction group
+    plot_data <- adiversity_data$metadata %>%
+      mutate(
+        Diversity = diversity_results[[diversity_index]],
+        InteractionGroup = if (colour_by != "None") {
+          interaction(.data[[x_axis]], .data[[colour_by]], sep = " | ")
+        } else {
+          as.factor(.data[[x_axis]])
+        }
+      )
+    # Perform pairwise Wilcoxon tests across all interaction groups
+    test_result <- pairwise.wilcox.test(
+      plot_data$Diversity,
+      plot_data$InteractionGroup,
+      p.adjust.method = "BH",
+      exact = FALSE
     )
-    p_value_df <- as.data.frame(as.table(result$p.value))
-    data.frame(
-      Comparison = paste(p_value_df$Var1, p_value_df$Var2, sep = " vs "),
-      AdjustedP_Value = p_value_df$Freq
+    # Convert results to long format
+    pvalue_data <- as.data.frame(as.table(test_result$p.value)) %>%
+      filter(!is.na(Freq)) %>%
+      mutate(
+        Comparison = paste(Var1, "vs.", Var2),
+        AdjustedPValue = round(Freq, 4),
+        Significance = case_when(
+          AdjustedPValue < 0.001 ~ "***",
+          AdjustedPValue < 0.01 ~ "**",
+          AdjustedPValue < 0.05 ~ "*",
+          TRUE ~ ""
+        )
+      ) %>%
+      dplyr::select(Comparison, AdjustedPValue, Significance) %>%
+      arrange(AdjustedPValue)
+    # Render with DT
+    datatable(
+      pvalue_data,
+      options = list(pageLength = 10, scrollX = TRUE),
+      rownames = FALSE
     )
   })
 })
@@ -245,7 +287,7 @@ observeEvent(input$refresh_beta, {
   colour_by2 <- input$colour_by2
   shape_by <- input$shape_by
   bdiversity_taxa_level <- input$bdiversity_taxa_level
-  taxa_data <- aggregate_taxa(bdiversity_data$abundance, bdiversity_taxa_level)
+  taxa_data <- memoised_aggregate_taxa(bdiversity_data$abundance, bdiversity_taxa_level)
   distance_matrix <- vegdist(taxa_data, method = method)
   metaMDS_result <- metaMDS(distance_matrix, distance = method, k = k, trymax = 100)
   beta_diversity_data <- data.frame(PC1 = metaMDS_result$points[, 1], PC2 = metaMDS_result$points[, 2])
@@ -277,17 +319,22 @@ observeEvent(input$refresh_beta, {
   output$b_diversity_plot <- renderPlotly({
     ggplotly(beta_diversity_plot)
   })
-  adonis_formula <- as.formula(paste("distance_matrix ~", colour_by2))
+  # Build PERMANOVA formula dynamically
+  if (shape_by != "None") {
+    adonis_formula <- as.formula(paste("distance_matrix ~", colour_by2, "*", shape_by))
+  } else {
+    adonis_formula <- as.formula(paste("distance_matrix ~", colour_by2))
+  }
   permanova_result <- adonis2(adonis_formula, data = metadata, permutations = 999)
   permanova_result_table <- as.data.frame(permanova_result)
-  output$permanova_tests <- renderTable({
+  output$permanova_tests <- renderDataTable({
     permanova_result_table
   })
 })
 
 # LEfSe
 no_donor_data <- reactive({
-  remove_samples(selected_data(), "Donor")
+  memoised_remove_samples(selected_data(), "Donor")
 })
 observeEvent(input$run, {
   req(no_donor_data(), input$lefse_taxa_level, input$class, input$subclass, input$kw_alpha, input$wilcoxon_alpha, input$lda)
@@ -300,7 +347,7 @@ observeEvent(input$run, {
   wilcoxon_alpha <- input$wilcoxon_alpha
   lda <- input$lda
   lefse_taxa_level <- input$lefse_taxa_level
-  taxa_data <- aggregate_taxa(data$abundance, lefse_taxa_level)
+  taxa_data <- memoised_aggregate_taxa(data$abundance, lefse_taxa_level)
   otumat <- t(taxa_data)
   SE <- SummarizedExperiment(assays = list(counts = otumat), colData = data.frame(data$metadata))
   lefse_data <- relativeAb(SE)
@@ -335,7 +382,7 @@ observeEvent(input$run, {
 
 # Maaslin2 Differential abundance
 no_donor_data2 <- reactive({
-  remove_samples(selected_data(), "Donor")
+  memoised_remove_samples(selected_data(), "Donor")
 })
 observeEvent(input$run2, {
   req(no_donor_data2(), input$maas_taxa_level, input$covariates)
@@ -343,7 +390,7 @@ observeEvent(input$run2, {
   data <- no_donor_data2()
   covariates <- input$covariates
   maas_taxa_level <- input$maas_taxa_level
-  taxa_data <- aggregate_taxa(data$abundance, maas_taxa_level)
+  taxa_data <- memoised_aggregate_taxa(data$abundance, maas_taxa_level)
   data$metadata[["Response + Timepoint"]] <- 
     interaction(data$metadata$response, data$metadata$timepoint)
   metadata <- data$metadata[, covariates]

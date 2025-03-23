@@ -12,6 +12,9 @@ library(lefser)
 library(plotly)
 library(googledrive)
 library(Maaslin2)
+library(memoise)
+
+source("helpers.R", local = TRUE)$value
 
 ui <- navbarPage(
   title = "FMT Microbiome Explorer",
@@ -83,7 +86,6 @@ ui <- navbarPage(
 )
 
 server <- function(input, output, session) {
-  source("helpers.R", local = TRUE)$value
   source("home_server.R", local = TRUE)$value
   source("metadata_server.R", local = TRUE)$value
   source("species_server.R", local = TRUE)$value
