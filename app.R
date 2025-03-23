@@ -81,14 +81,14 @@ ui <- navbarPage(
   ),
   source("home_ui.R", local = TRUE)$value,
   source("metadata_ui.R", local = TRUE)$value,
-  source("species_ui.R", local = TRUE)$value,
+  source("taxonomic_ui.R", local = TRUE)$value,
   source("functional_ui.R", local = TRUE)$value
 )
 
 server <- function(input, output, session) {
   source("home_server.R", local = TRUE)$value
   source("metadata_server.R", local = TRUE)$value
-  source("species_server.R", local = TRUE)$value
+  source("taxonomic_server.R", local = TRUE)$value
   source("functional_server.R", local = TRUE)$value
 }
 
