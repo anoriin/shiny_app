@@ -1,3 +1,14 @@
+# Mapping of taxa choices to strings in abundance table
+taxa_choices <- list(
+  "Kingdom"="k__", 
+  "Phylum"="p__", 
+  "Class"="c__", 
+  "Order"="o__", 
+  "Family"="f__", 
+  "Genus"="g__", 
+  "Species"="s__", 
+  "SGBs"="t__")
+
 # Mapping of user-friendly variable names to metadata column names
 variable_mapping <- list(
   "Sex" = "sex",
@@ -39,6 +50,7 @@ extract_taxonomic_level <- function(taxa_strings, level_prefix) {
     }
   })
 }
+
 aggregate_taxa <- function(abundance_matrix, level_prefix) {
   # Extract the taxonomic levels from the column names
   taxa_strings <- colnames(abundance_matrix)
@@ -200,16 +212,8 @@ generate_fcplot <- function(selected_data, feature, selected_features, responder
   return(list(fc_plot, fc_table))
 }
 
-# Function to filter data based on subset selection
-filter_data <- function(input_subset) {
-  reactive({
-    req(selected_data())  # Ensure the data is loaded
-    if (input_subset() == "Donors") {
-      return(remove_samples(selected_data(), "Recipient"))
-    } else if (input_subset() == "Recipients") {
-      return(remove_samples(selected_data(), "Donor"))
-    } else {
-      return(selected_data())  # No filtering
-    }
-  })
-}
+# Memoised versions
+memoised_remove_samples <- memoise(remove_samples)
+memoised_aggregate_taxa <- memoise(aggregate_taxa)
+memoised_generate_abuplot <- memoise(generate_abuplot)
+memoised_generate_fcplot <- memoise(generate_fcplot)

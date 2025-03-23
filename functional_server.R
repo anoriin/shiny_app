@@ -56,7 +56,21 @@ output$warning_genes_diffabundance <- renderUI({ if (!table_requested1()) show_d
 output$warning_pw_diffabundance <- renderUI({ if (!table_requested2()) show_dataset_message() })
 output$warning_ec_diffabundance <- renderUI({ if (!table_requested3()) show_dataset_message() })
 
-# Function to dynamically update selection input based on dataset
+# Function to filter data based on subset selection
+filter_data <- function(input_subset) {
+  reactive({
+    req(selected_data())  # Ensure the data is loaded
+    if (input_subset() == "Donors") {
+      return(memoised_remove_samples(selected_data(), "Recipient"))
+    } else if (input_subset() == "Recipients") {
+      return(memoised_remove_samples(selected_data(), "Donor"))
+    } else {
+      return(selected_data())  # No filtering
+    }
+  })
+}
+
+# Function to dynamically update selection input based on selected dataset
 update_dynamic_select <- function(input_id, data_key) {
   observe({
     req(selected_data())  # Ensure the data is loaded
@@ -104,7 +118,7 @@ generate_abundance_plot <- function(input_trigger, input_subset, data_key, input
     split_by2 <- input_split_by2()
     selected_items <- input_selected()
     # Generate the abundance plot
-    abundance_result <- generate_abuplot(selected_data, data_key, selected_items, split_by, split_by2)
+    abundance_result <- memoised_generate_abuplot(selected_data, data_key, selected_items, split_by, split_by2)
     abundance_plot <- abundance_result[[1]]
     abundance_table <- abundance_result[[2]]
     # Render the plot
@@ -130,7 +144,7 @@ generate_fc_plot <- function(input_trigger, data_key, input_selected, input_filt
     selected_data <- selected_data()
     selected_fc <- input_selected() 
     responder_filter <- input_filter()
-    fc_result <- generate_fcplot(selected_data, data_key, selected_fc, responder_filter)  # Generate FC plot
+    fc_result <- memoised_generate_fcplot(selected_data, data_key, selected_fc, responder_filter)  # Generate FC plot
     fc_plot <- fc_result[[1]]
     fc_table <- fc_result[[2]]
     # Render the FC plot
@@ -200,7 +214,7 @@ generate_diffabundance_table <- function(input_trigger, data_key, covariates, ou
     if (output_table == "genes_diffabundance_table") { table_requested1(TRUE) }
     if (output_table == "pw_diffabundance_table") { table_requested2(TRUE) }
     if (output_table == "ec_diffabundance_table") { table_requested3(TRUE) }
-    data <- remove_samples(selected_data(), "Donor")
+    data <- memoised_remove_samples(selected_data(), "Donor")
     data$metadata[["Response + Timepoint"]] <- 
       interaction(data$metadata$response, data$metadata$timepoint)
     metadata <- data$metadata[, covariates()]
