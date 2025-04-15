@@ -9,6 +9,13 @@ plot_requested14 <- reactiveVal(FALSE)
 table_requested1 <- reactiveVal(FALSE)
 table_requested2 <- reactiveVal(FALSE)
 table_requested3 <- reactiveVal(FALSE)
+gfabu_table_requested <- reactiveVal(FALSE)
+gffc_table_requested <- reactiveVal(FALSE)
+pwabu_table_requested <- reactiveVal(FALSE)
+pwfc_table_requested <- reactiveVal(FALSE)
+ecabu_table_requested <- reactiveVal(FALSE)
+ecfc_table_requested <- reactiveVal(FALSE)
+cov_table_requested <- reactiveVal(FALSE)
 
 observeEvent(selected_data(), {
   plot_requested8(FALSE)
@@ -21,6 +28,13 @@ observeEvent(selected_data(), {
   table_requested1(FALSE)
   table_requested2(FALSE)
   table_requested3(FALSE)
+  gfabu_table_requested(FALSE)
+  gffc_table_requested(FALSE)
+  pwabu_table_requested(FALSE)
+  pwfc_table_requested(FALSE)
+  ecabu_table_requested(FALSE)
+  ecfc_table_requested(FALSE)
+  cov_table_requested(FALSE)
   
   # Explicitly remove plots by setting output to NULL
   output$genesabu_plot <- renderPlotly(NULL)
@@ -109,9 +123,9 @@ update_metadata_selection2 <- function(input_subset, input_split_by2) {
 # Function to generate and render abundance plots
 generate_abundance_plot <- function(input_trigger, input_subset, data_key, input_selected, input_split_by, input_split_by2, output_plot, output_table) {
   observeEvent(input_trigger(), {
-    if (output_plot == "genesabu_plot") { plot_requested8(TRUE) }
-    if (output_plot == "pwabu_plot") { plot_requested10(TRUE) }
-    if (output_plot == "enzymesabu_plot") { plot_requested13(TRUE) }
+    if (output_plot == "genesabu_plot") { plot_requested8(TRUE); gfabu_table_requested(TRUE)}
+    if (output_plot == "pwabu_plot") { plot_requested10(TRUE); pwabu_table_requested(TRUE)}
+    if (output_plot == "enzymesabu_plot") { plot_requested13(TRUE); ecabu_table_requested(TRUE)}
     req(selected_data(), input_selected(), input_split_by(), input_split_by2())  # Ensure necessary inputs are available
     selected_data <- filter_data(input_subset)()  # Get subsetted data
     split_by <- input_split_by()
@@ -137,9 +151,9 @@ generate_abundance_plot <- function(input_trigger, input_subset, data_key, input
 # Function to generate and render fold change plots and tables
 generate_fc_plot <- function(input_trigger, data_key, input_selected, input_filter, output_plot, output_table) {
   observeEvent(input_trigger(), {
-    if (output_plot == "genesfc_plot") { plot_requested9(TRUE) }
-    if (output_plot == "pwfc_plot") { plot_requested11(TRUE) }
-    if (output_plot == "enzymesfc_plot") { plot_requested14(TRUE) }
+    if (output_plot == "genesfc_plot") { plot_requested9(TRUE); gffc_table_requested(TRUE)}
+    if (output_plot == "pwfc_plot") { plot_requested11(TRUE); pwfc_table_requested(TRUE)}
+    if (output_plot == "enzymesfc_plot") { plot_requested14(TRUE); ecfc_table_requested(TRUE)}
     req(selected_data(), input_selected(), input_filter())  # Ensure necessary inputs are available
     selected_data <- selected_data()
     selected_fc <- input_selected() 
@@ -163,6 +177,7 @@ generate_fc_plot <- function(input_trigger, data_key, input_selected, input_filt
 generate_coverage_plot <- function(input_trigger, input_subset, data_key, input_selected, output_plot, output_table) {
   observeEvent(input_trigger(), {
     plot_requested12(TRUE)
+    cov_table_requested(TRUE)
     req(filter_data(input_subset)(), input_selected())  # Ensure necessary inputs are available
     selected_data <- filter_data(input_subset)()  # Get filtered data
     selected_pathways <- input_selected()
@@ -209,12 +224,12 @@ generate_coverage_plot <- function(input_trigger, input_subset, data_key, input_
   })
 }
 
-generate_diffabundance_table <- function(input_trigger, data_key, covariates, output_table) {
+generate_diffabundance_table <- function(input_trigger, input_subset, data_key, covariates, output_table) {
   observeEvent(input_trigger(), {
     if (output_table == "genes_diffabundance_table") { table_requested1(TRUE) }
     if (output_table == "pw_diffabundance_table") { table_requested2(TRUE) }
     if (output_table == "ec_diffabundance_table") { table_requested3(TRUE) }
-    data <- memoised_remove_samples(selected_data(), "Donor")
+    data <- filter_data(input_subset)()  # Get filtered data
     data$metadata[["Response + Timepoint"]] <- 
       interaction(data$metadata$response, data$metadata$timepoint)
     metadata <- data$metadata[, covariates()]
@@ -240,7 +255,7 @@ update_metadata_selection2(reactive(input$genes_subset_data), "genes_split_by2")
 generate_abundance_plot(reactive(input$generate_genesabuplot), reactive(input$genes_subset_data), "genefamilies", reactive(input$selected_genes_abu), reactive(input$genes_split_by), reactive(input$genes_split_by2), "genesabu_plot", "genesabu_table")
 update_dynamic_select("selected_genes_fc", "genefamilies")
 generate_fc_plot(reactive(input$generate_genesfcplot), "genefamilies", reactive(input$selected_genes_fc), reactive(input$genes_responder_filter), "genesfc_plot", "genesfc_table")
-generate_diffabundance_table(reactive(input$generate_genes_diffabundance_table), "genefamilies", reactive(input$genes_covariates), "genes_diffabundance_table")
+generate_diffabundance_table(reactive(input$generate_genes_diffabundance_table), reactive(input$genes_da_subset_data), "genefamilies", reactive(input$genes_covariates), "genes_diffabundance_table")
 
 # PATHWAYS
 update_dynamic_select("selected_pathways_abu", "pathabundance")
@@ -249,7 +264,7 @@ update_metadata_selection2(reactive(input$pathways_subset_data), "pathways_split
 generate_abundance_plot(reactive(input$generate_pwabuplot), reactive(input$pathways_subset_data), "pathabundance", reactive(input$selected_pathways_abu), reactive(input$pathways_split_by), reactive(input$pathways_split_by2), "pwabu_plot", "pwabu_table")
 update_dynamic_select("selected_pathways_fc", "pathabundance")
 generate_fc_plot(reactive(input$generate_pwfcplot), "pathabundance", reactive(input$selected_pathways_fc), reactive(input$pathways_responder_filter), "pwfc_plot", "pwfc_table")
-generate_diffabundance_table(reactive(input$generate_pw_diffabundance_table), "pathabundance", reactive(input$pw_covariates), "pw_diffabundance_table")
+generate_diffabundance_table(reactive(input$generate_pw_diffabundance_table), reactive(input$pw_da_subset_data), "pathabundance", reactive(input$pw_covariates), "pw_diffabundance_table")
 # PATHWAY COVERAGE
 update_dynamic_select("selected_pathways_cov", "pathcoverage")
 generate_coverage_plot(reactive(input$generate_pwcovplot), reactive(input$pathwayscov_subset_data), "pathcoverage", reactive(input$selected_pathways_cov), "pwcov_plot", "pwcov_table")
@@ -261,5 +276,5 @@ update_metadata_selection2(reactive(input$enzymes_subset_data), "enzymes_split_b
 generate_abundance_plot(reactive(input$generate_enzymesabuplot), reactive(input$enzymes_subset_data), "enzyme_commissions", reactive(input$selected_enzymes_abu), reactive(input$enzymes_split_by), reactive(input$enzymes_split_by2), "enzymesabu_plot", "enzymesabu_table")
 update_dynamic_select("selected_enzymes_fc", "enzyme_commissions")
 generate_fc_plot(reactive(input$generate_enzymesfcplot), "enzyme_commissions", reactive(input$selected_enzymes_fc), reactive(input$enzymes_responder_filter), "enzymesfc_plot", "enzymesfc_table")
-generate_diffabundance_table(reactive(input$generate_ec_diffabundance_table), "enzyme_commissions", reactive(input$ec_covariates), "ec_diffabundance_table")
+generate_diffabundance_table(reactive(input$generate_ec_diffabundance_table), reactive(input$enzymes_da_subset_data), "enzyme_commissions", reactive(input$ec_covariates), "ec_diffabundance_table")
 

@@ -36,7 +36,7 @@ tabPanel("Taxonomic Profiling",
                       sidebarLayout(
                         sidebarPanel(
                           selectInput("taxa_level2", "Choose taxonomic level:",
-                                      choices = list("Kingdom"="k__", "Phylum"="p__", "Class"="c__", "Order"="o__", "Family"="f__", "Genus"="g__", "Species"="s__", "SGBs"="t__"),
+                                      choices = taxa_choices,
                                       selected = "Genus"
                           ),
                           selectizeInput("selected_taxa", "Select taxa to display", choices = NULL, multiple = TRUE, options = list(placeholder = "Select one or more taxa")),
@@ -66,13 +66,15 @@ tabPanel("Taxonomic Profiling",
                       sidebarLayout(
                         sidebarPanel(
                           selectInput("adiversity_taxa_level", "Choose taxonomic level to analyze:",
-                                      choices = taxa_choices
-                          ),
-                          selectInput("ad_subset_data", "Subset data:", choices = c("All", "Recipients", "Donors")),
-                          selectInput("diversity_index", "Select diversity index:", choices = c("Observed", "Core", "Shannon", "Simpson", "InvSimpson")),
-                          selectInput("x_axis", "Select X-axis variable:", choices = variable_mapping),
-                          selectInput("colour_by", "Colour points by:", choices = c("None", variable_mapping[names(variable_mapping) != "Age"])),
-                          
+                                      choices = taxa_choices),
+                          selectInput("ad_subset_data", "Subset data:", 
+                                      choices = c("All", "Recipients", "Donors")),
+                          selectInput("diversity_index", "Select diversity index:", 
+                                      choices = c("Observed", "Core", "Shannon", "Simpson", "InvSimpson")),
+                          selectInput("x_axis", "Select X-axis variable:", 
+                                      choices = variable_mapping),
+                          selectInput("colour_by", "Colour points by:", 
+                                      choices = c("None", variable_mapping[names(variable_mapping) != "Age"])),
                           actionButton("refresh_alpha", "Plot")
                         ),
                         mainPanel(
@@ -98,7 +100,7 @@ tabPanel("Taxonomic Profiling",
                           selectInput("bdiversity_taxa_level", "Choose taxonomic level to analyze:",
                                       choices = taxa_choices
                           ),
-                          selectInput("bd_subset_data", "Subset data:", choices = c("All", "Recipients")),
+                          selectInput("bd_subset_data", "Subset data:", choices = c("All", "Donors", "Recipients")),
                           selectInput("method", "Choose a distance method:", choices = c("bray", "euclidean", "manhattan", "jaccard")),
                           selectInput("colour_by2", "Colour points by (grouping condition for PERMANOVA):", choices = variable_mapping[names(variable_mapping) != "Age"]),
                           selectInput("shape_by", "Shape points by:", choices = c("None", variable_mapping[names(variable_mapping) != "Age"])),
@@ -128,8 +130,9 @@ tabPanel("Taxonomic Profiling",
                           selectInput("maas_taxa_level", "Choose taxonomic level to analyze:",
                                       choices = taxa_choices
                           ),
+                          selectInput("da_subset_data", "Subset data:", choices = c("All", "Donors", "Recipients")),
                           selectizeInput("covariates", "Choose covariates:",
-                                         choices = c(variable_mapping[names(variable_mapping) %in% c("Response", "Sex", "Pre- or Post-FMT", "Age", "S point")], "Response + Timepoint"),
+                                         choices = c(variable_mapping, "Response + Timepoint"),
                                          multiple = TRUE,
                                          options = list(placeholder = "Select one or more covariates")
                           ),
