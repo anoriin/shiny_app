@@ -7,7 +7,7 @@ taxa_choices <- list(
   "Family"="f__", 
   "Genus"="g__", 
   "Species"="s__", 
-  "SGBs"="t__")
+  "SGB"="t__")
 
 # Mapping of user-friendly variable names to metadata column names
 variable_mapping <- list(
@@ -16,7 +16,8 @@ variable_mapping <- list(
   "S point" = "s_point",
   "Donor or Recipient" = "donor_or_recipient",
   "Pre- or Post-FMT" = "timepoint",
-  "Response" = "response"
+  "Response" = "response",
+  "Patient" = "patient"
 )
 
 # Custom card CSS

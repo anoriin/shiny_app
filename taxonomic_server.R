@@ -310,7 +310,7 @@ observeEvent(input$refresh_beta, {
     geom_point(na.rm = TRUE, size = 2, alpha = 0.7) +
     stat_ellipse() + 
     geom_text(aes(label = patient), nudge_y = 0.1, size = 2) +  # Add text labels above points
-    labs(x = "Axis 1", y = "Axis 2") +
+    labs(x = "PCo1", y = "PCo2") +
     theme_minimal() +
     theme(
       axis.title.x = element_text(size = 14),
@@ -381,13 +381,10 @@ observeEvent(input$run, {
 })
 
 # Maaslin2 Differential abundance
-no_donor_data2 <- reactive({
-  memoised_remove_samples(selected_data(), "Donor")
-})
 observeEvent(input$run2, {
-  req(no_donor_data2(), input$maas_taxa_level, input$covariates)
+  req(input$maas_taxa_level, input$da_subset_data, input$covariates)
   table_requested_maas(TRUE)
-  data <- no_donor_data2()
+  data <- filter_data(reactive(input$da_subset_data))()
   covariates <- input$covariates
   maas_taxa_level <- input$maas_taxa_level
   taxa_data <- memoised_aggregate_taxa(data$abundance, maas_taxa_level)

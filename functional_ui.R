@@ -36,13 +36,13 @@ tabPanel("Functional Profiling",
                     h3("Gene Family Differential Abundance"),
                     card(
                       tags$div("Identify gene families significantly associated with metadata variables using Maaslin2 (Multivariable Association Discovery in Population-scale Meta-omics Studies)."),
-                      tags$div("This method uses multivariable linear models to link microbial community composition to metadata."),
-                      tags$div("Note: Donor samples were excluded from this analysis.")
+                      tags$div("This method uses multivariable linear models to link microbial community composition to metadata.")
                     ),
                     
                     fluidPage(
                       sidebarLayout(
                         sidebarPanel(
+                          selectInput("genes_da_subset_data", "Subset data:", choices = c("All", "Donors", "Recipients")),
                           selectizeInput("genes_covariates", "Select model covariates:", choices = c(variable_mapping[names(variable_mapping) %in% c("Response", "Sex", "Pre- or Post-FMT", "Age", "S point")], "Response + Timepoint"), multiple = TRUE, 
                                       options = list(placeholder = "Select one or more covariates")),
                           actionButton("generate_genes_diffabundance_table", label = "Run")
@@ -109,13 +109,13 @@ tabPanel("Functional Profiling",
                     
                     h3("Pathway Differential Abundance"),
                     card(
-                      tags$div("Identify significant pathways associated with metadata using Maaslin2."),
-                      tags$div("Note: Donor samples were excluded from this analysis.")
+                      tags$div("Identify significant pathways associated with metadata using Maaslin2.")
                     ),
                     
                     fluidPage(
                       sidebarLayout(
                         sidebarPanel(
+                          selectInput("pw_da_subset_data", "Subset data:", choices = c("All", "Donors", "Recipients")),
                           selectizeInput("pw_covariates", "Select model covariates:", choices = c(variable_mapping[names(variable_mapping) %in% c("Response", "Sex", "Pre- or Post-FMT", "Age", "S point")], "Response + Timepoint"), multiple = TRUE, 
                                       options = list(placeholder = "Select one or more covariates")),
                           actionButton("generate_pw_diffabundance_table", label = "Run")
@@ -203,13 +203,13 @@ tabPanel("Functional Profiling",
                     
                     h3("Enzyme Differential Abundance"),
                     card(
-                      tags$div("Identify significant enzymes associated with metadata using Maaslin2."),
-                      tags$div("Note: Donor samples were excluded from this analysis.")
+                      tags$div("Identify significant enzymes associated with metadata using Maaslin2.")
                     ),
                     
                     fluidPage(
                       sidebarLayout(
                         sidebarPanel(
+                          selectInput("enzymes_da_subset_data", "Subset data:", choices = c("All", "Donors", "Recipients")),
                           selectizeInput("ec_covariates", "Select model covariates:", choices = c(variable_mapping[names(variable_mapping) %in% c("Response", "Sex", "Pre- or Post-FMT", "Age", "S point")], "Response + Timepoint"), multiple = TRUE, 
                                       options = list(placeholder = "Select one or more covariates")),
                           actionButton("generate_ec_diffabundance_table", label = "Run")
